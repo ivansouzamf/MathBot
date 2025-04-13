@@ -43,10 +43,10 @@ func TestParser(t *testing.T) {
 		{Multi, High, 0.0},
 		{Number, None, 4.0},
 	}
-	result := ParseMathTokens(tokens, 0)
+	result, _, err := ParseMathTokens(tokens, 0)
 	expected := 45.0
 
-	if result != expected {
+	if result != expected || err != nil {
 		t.Errorf("Parsing went wrong. Expected: %f, Got: %f", expected, result)
 	}
 }
