@@ -14,7 +14,10 @@ func EvaluateMathExp(exp string) (float64, error) {
 		return 0.0, InvalidExp
 	}
 
-	res := ParseMathTokens(tokens, 0)
+	res, _, err := ParseMathTokens(tokens, 0)
+	if err != nil {
+		return 0.0, InvalidExp
+	}
 
 	return res, nil
 }
@@ -72,45 +75,63 @@ func EvaluateMathExp(exp string) (float64, error) {
 // 	return left
 // }
 
-func ParseMathTokens(tokens []Token, i int) float64 {
+func ParseMathTokens(tokens []Token, i int) (float64, int, error) {
+	InvalidSyntax := errors.New("Invalid Syntex")
 	acumulator := 0.0
 
 	for i = i; i < len(tokens); i += 1 {
+		previous := Token{Invalid, None, 0.0}
+		if i != 0 {
+			previous = tokens[i - 1]
+		}
+
+		// Check for invalid Syntax, like double operator and no operator between numbers
+		if previous.kind == tokens[i].kind || previous.kind >= Plus && tokens[i].kind >= Plus {
+			return 0.0, 0, InvalidSyntax
+		}
+
 		if tokens[i].kind == Number {
 			acumulator += tokens[i].num
 			continue
 		}
-
+		
+		j := i
 		right := tokens[i + 1].num
 
-		currentPrec := Low
+		currentPrec := tokens[i].prec
 		nextPrec := Low
 		if i + 1 < len(tokens) - 1 {
-			currentPrec = tokens[i].prec
 			nextPrec = tokens[i + 2].prec
 		}
 
 		// If precedence increases we recurse
 		recurse := currentPrec < nextPrec
 		if recurse {
-			right = ParseMathTokens(tokens, i + 1)
+			var err error
+			right, j, err = ParseMathTokens(tokens, i + 1)
+			if err != nil {
+				return 0.0, 0, err
+			}
 		}
-
+		
 		switch tokens[i].kind {
 			case Plus: acumulator += right
 			case Minus: acumulator -= right
 			case Multi: acumulator *= right
 			case Divi: acumulator /= right
 		}
-
-		if recurse {
-			return acumulator
+		
+		if j != i {
+			i = j
+		} else if recurse || nextPrec < currentPrec {
+			// If precedence decreases we return to preserve the order of the operations
+			return acumulator, j, nil
 		}
 
 		i += 1
 	}
 
-	return acumulator
+	return acumulator, 0, nil
 }
 
 func TokenizeMathExp(exp string) ([]Token, error) {
@@ -118,7 +139,7 @@ func TokenizeMathExp(exp string) ([]Token, error) {
 	resErr := errors.New("invalid token")
 
 	for i := 0; i < len(exp); i += 1 {
-		nullToken := Token{Number, None, 0.0}
+		nullToken := Token{Invalid, None, 0.0}
 		token := nullToken
 		switch exp[i] {
 			case ' ': continue
@@ -180,7 +201,8 @@ type Token struct {
 
 type TokenKind uint32
 const (
-	Number TokenKind = iota
+	Invalid TokenKind = iota 
+	Number
 	Open
 	Close
 	Plus
