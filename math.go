@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"math"
 	"strconv"
 	"unicode"
 )
@@ -119,6 +120,7 @@ func ParseMathTokens(tokens []Token, i int) (float64, int, error) {
 			case Minus: acumulator -= right
 			case Multi: acumulator *= right
 			case Divi: acumulator /= right
+			case Powe: acumulator = math.Pow(acumulator, right);
 		}
 		
 		if j != i {
@@ -149,6 +151,7 @@ func TokenizeMathExp(exp string) ([]Token, error) {
 			case '-': token = Token{Minus, Low, 0.0}
 			case '*': token = Token{Multi, High, 0.0}
 			case '/': token = Token{Divi, High, 0.0}
+			case '^': token = Token{Powe, VeryHigh, 0.0}
 		}
 		if token != nullToken {
 			tokens = append(tokens, token)
@@ -209,6 +212,7 @@ const (
 	Minus
 	Multi
 	Divi
+	Powe
 )
 
 type Precedence uint32
