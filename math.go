@@ -148,7 +148,16 @@ func TokenizeMathExp(exp string) ([]Token, error) {
 			case '(': token = Token{Open, VeryHigh, 0.0}
 			case ')': token = Token{Close, VeryHigh, 0.0}
 			case '+': token = Token{Plus, Low, 0.0}
-			case '-': token = Token{Minus, Low, 0.0}
+			case '-': {
+				last := Token{Plus, None, 0.0}
+				if len(tokens) != 0 {
+					last = tokens[len(tokens) - 1]
+				}
+
+				if last.kind < Plus {
+					token = Token{Minus, Low, 0.0}
+				}
+			}	
 			case '*': token = Token{Multi, High, 0.0}
 			case '/': token = Token{Divi, High, 0.0}
 			case '^': token = Token{Powe, VeryHigh, 0.0}
@@ -159,7 +168,7 @@ func TokenizeMathExp(exp string) ([]Token, error) {
 		}
 
 		// Check for invalid tokens
-		if !unicode.IsDigit(rune(exp[i])) {
+		if !unicode.IsDigit(rune(exp[i])) && exp[i] != '-' {
 			return nil, resErr
 		}
 		
@@ -167,7 +176,7 @@ func TokenizeMathExp(exp string) ([]Token, error) {
 		for j := i; true; j += 1 {
 			isPossibleNum := false
 			if j < len(exp) {
-				isPossibleNum = unicode.IsDigit(rune(exp[j])) || exp[j] == '.'
+				isPossibleNum = unicode.IsDigit(rune(exp[j])) || exp[j] == '.' || exp[j] == '-'
 			}
 
 			if isPossibleNum {
