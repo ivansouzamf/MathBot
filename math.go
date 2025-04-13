@@ -84,8 +84,8 @@ func ParseMathTokens(tokens []Token, i int, isRecursive bool) (float64, int, err
 }
 
 func TokenizeMathExp(exp string) ([]Token, error) {
+	InvalidToken := errors.New("Invalid token")
 	tokens := []Token{}
-	resErr := errors.New("invalid token")
 
 	for i := 0; i < len(exp); i += 1 {
 		nullToken := Token{Invalid, None, 0.0}
@@ -114,11 +114,6 @@ func TokenizeMathExp(exp string) ([]Token, error) {
 			continue
 		}
 
-		// Check for invalid tokens
-		if !unicode.IsDigit(rune(exp[i])) && exp[i] != '-' {
-			return nil, resErr
-		}
-		
 		var numStr string
 		for j := i; true; j += 1 {
 			isPossibleNum := false
@@ -131,18 +126,15 @@ func TokenizeMathExp(exp string) ([]Token, error) {
 				continue
 			}
 			
-			// FIXME: Check for non space runes and return error.
-			// Actually not just non space, but maybe merge this with
-			// other tokens as well like +, -, * and so on
-
-			if len(numStr) != 0 {
-				numF64, err := strconv.ParseFloat(numStr, 64)
-				if err != nil {
-					return nil, resErr
-				}
-
-				tokens = append(tokens, Token{Number, None, numF64})
+			// NOTE: This actually handles all the possible errors of the tokenizer
+			// since everything that's not valid is treated as a possible number and 
+			// then checked here
+			numF64, err := strconv.ParseFloat(numStr, 64)
+			if err != nil {
+				return nil, InvalidToken
 			}
+
+			tokens = append(tokens, Token{Number, None, numF64})
 			
 			i += (j - i) - 1
 			break
