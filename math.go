@@ -15,7 +15,7 @@ func EvaluateMathExp(exp string) (float64, error) {
 		return 0.0, InvalidExp
 	}
 
-	res, _, err := ParseMathTokens(tokens, 0)
+	res, _, err := ParseMathTokens(tokens, 0, false)
 	if err != nil {
 		return 0.0, InvalidExp
 	}
@@ -23,60 +23,7 @@ func EvaluateMathExp(exp string) (float64, error) {
 	return res, nil
 }
 
-// func ParseMathTokens(tokens []Token, i int) float64 {
-// 	/**** LOOP METHOD ****/
-//
-// 	acumulator := 0.0
-//
-// 	for i := 0; i < len(tokens); i += 1 {
-// 		if tokens[i].kind == Number {
-// 			acumulator += tokens[i].num
-// 			continue
-// 	}
-//
-// 		right := tokens[i + 1].num
-//
-// 		switch tokens[i].kind {
-// 			default: return 0.0
-// 			case Plus: acumulator += right
-// 			case Minus: acumulator -= right
-// 			case Multi: acumulator *= right
-// 			case Divi: acumulator /= right
-// 		}
-//
-// 		i += 1
-// 	}
-//
-// 	return acumulator
-//
-//
-// 	/**** RECURSION METHOD ****/
-//
-// 	left := 0.0
-// 	right := 0.0
-//
-// 	if i >= len(tokens) - 1 {
-// 		return tokens[i].num
-// 	}
-//
-// 	if tokens[i].kind == Number {
-// 		left = tokens[i].num
-// 		i += 1
-// 		right = ParseMathTokens(tokens, i + 1)
-// 	}
-//
-// 	switch tokens[i].kind {
-// 		default: return 0.0
-// 		case Plus: left += right
-// 		case Minus: left -= right
-// 		case Multi: left *= right
-// 		case Divi: left /= right
-// 	}
-//
-// 	return left
-// }
-
-func ParseMathTokens(tokens []Token, i int) (float64, int, error) {
+func ParseMathTokens(tokens []Token, i int, isRecursive bool) (float64, int, error) {
 	InvalidSyntax := errors.New("Invalid Syntex")
 	acumulator := 0.0
 
@@ -109,7 +56,7 @@ func ParseMathTokens(tokens []Token, i int) (float64, int, error) {
 		recurse := currentPrec < nextPrec
 		if recurse {
 			var err error
-			right, j, err = ParseMathTokens(tokens, i + 1)
+			right, j, err = ParseMathTokens(tokens, i + 1, true)
 			if err != nil {
 				return 0.0, 0, err
 			}
@@ -120,12 +67,12 @@ func ParseMathTokens(tokens []Token, i int) (float64, int, error) {
 			case Minus: acumulator -= right
 			case Multi: acumulator *= right
 			case Divi: acumulator /= right
-			case Powe: acumulator = math.Pow(acumulator, right);
+			case Powe: acumulator = math.Pow(acumulator, right)
 		}
 		
 		if j != i {
 			i = j
-		} else if recurse || nextPrec < currentPrec {
+		} else if recurse || nextPrec < currentPrec && isRecursive {
 			// If precedence decreases we return to preserve the order of the operations
 			return acumulator, j, nil
 		}
